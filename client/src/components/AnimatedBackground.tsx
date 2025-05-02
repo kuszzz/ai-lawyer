@@ -11,10 +11,10 @@ const AnimatedBackground = () => {
   ];
   
   return (
-    <div className="absolute inset-0 overflow-hidden opacity-10 pointer-events-none z-0">
+    <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none z-0">
       {/* Moving text background */}
       <motion.div 
-        className="absolute inset-0 font-mono text-xs text-legal-blue overflow-hidden"
+        className="absolute inset-0 font-mono text-xs text-legal-dark font-bold overflow-hidden dark:text-legal-blue-light"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 2 }}
@@ -55,19 +55,19 @@ const AnimatedBackground = () => {
           return (
             <motion.div
               key={`circle-${i}`}
-              className="absolute rounded-full opacity-20"
+              className="absolute rounded-full opacity-30 dark:opacity-25"
               style={{
                 width: size,
                 height: size,
-                background: i % 2 === 0 ? 'radial-gradient(circle, rgba(10,36,99,0.4) 0%, rgba(10,36,99,0) 70%)' : 
-                                          'radial-gradient(circle, rgba(255,215,0,0.4) 0%, rgba(255,215,0,0) 70%)',
+                background: i % 2 === 0 ? 'radial-gradient(circle, rgba(10,36,99,0.5) 0%, rgba(10,36,99,0) 70%)' : 
+                                          'radial-gradient(circle, rgba(212,175,55,0.5) 0%, rgba(212,175,55,0) 70%)',
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
               }}
               animate={{
                 x: [0, Math.random() * 50 - 25],
                 y: [0, Math.random() * 50 - 25],
-                opacity: [0.1, 0.2, 0.1],
+                opacity: [0.2, 0.3, 0.2],
               }}
               transition={{
                 duration: 10 + Math.random() * 10,
