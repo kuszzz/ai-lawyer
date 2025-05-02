@@ -170,7 +170,9 @@ export function setupLegalRoutes(app: any) {
         prediction: analysis.prediction,
         precedents: analysis.precedents,
         argumentAnalysis: analysis.argumentAnalysis,
-        createdAt: analysis.createdAt.toISOString()
+        createdAt: typeof analysis.createdAt === 'object' && analysis.createdAt instanceof Date ? 
+          analysis.createdAt.toISOString() : 
+          (typeof analysis.createdAt === 'string' ? analysis.createdAt : new Date().toISOString())
       };
       
       res.json(response);
