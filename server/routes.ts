@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { setupLegalRoutes } from "./api/legal";
+import { setupChatRoutes } from "./api/chat";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -26,6 +28,10 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up legal and chat API routes
+  setupLegalRoutes(app);
+  setupChatRoutes(app);
+
   // API routes
   
   // User routes
