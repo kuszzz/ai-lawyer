@@ -5,13 +5,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import NotFound from "@/pages/not-found";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import Home from "@/pages/Home";
 import Upload from "@/pages/Upload";
 import Analysis from "@/pages/Analysis";
 import Judge from "@/pages/Judge";
 import Dashboard from "@/pages/Dashboard";
+import ChatPreview from "@/components/ChatPreview";
 
 function Router() {
   return (
@@ -32,12 +31,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
-          <div className="bg-legal-dark text-legal-text min-h-screen flex flex-col">
-            <Navbar />
+          <div className="min-h-screen flex flex-col">
             <main className="flex-grow">
               <Router />
             </main>
-            <Footer />
+            <ChatPreview />
           </div>
           <Toaster />
         </TooltipProvider>
