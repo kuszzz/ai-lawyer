@@ -31,7 +31,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
-          <div className="min-h-screen flex flex-col">
+          <div className="min-h-screen flex flex-col bg-legal-dark text-legal-text">
             <main className="flex-grow">
               <Router />
             </main>

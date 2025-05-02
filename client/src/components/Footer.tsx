@@ -56,12 +56,11 @@ const Footer = () => {
               {links.map((link) => (
                 <li key={link.path}>
                   <Link href={link.path}>
-                    <motion.a 
-                      className="text-legal-text-secondary hover:text-legal-gold transition-colors inline-block"
-                      whileHover={{ x: 5 }}
+                    <div 
+                      className="text-legal-text-secondary hover:text-legal-gold transition-colors inline-block cursor-pointer"
                     >
                       {link.name}
-                    </motion.a>
+                    </div>
                   </Link>
                 </li>
               ))}
