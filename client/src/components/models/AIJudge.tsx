@@ -8,7 +8,7 @@ export default function AIJudge(props: any) {
   const brainRef = useRef<THREE.Mesh>(null);
   const circuitsRef = useRef<THREE.Mesh>(null);
   
-  // Animation for pulsating brain and circuits
+  // Animation for pulsating brain
   useFrame(({ clock }) => {
     if (groupRef.current) {
       // Subtle rotation
@@ -16,56 +16,22 @@ export default function AIJudge(props: any) {
       
       // Brain pulsating effect
       if (brainRef.current) {
-        const scale = 1 + Math.sin(clock.getElapsedTime() * 2) * 0.03;
+        const scale = 1 + Math.sin(clock.getElapsedTime() * pulseSpeed) * 0.03;
         brainRef.current.scale.set(scale, scale, scale);
       }
       
-      // Circuit animation
-      if (circuitsRef.current && circuitsRef.current.material instanceof THREE.ShaderMaterial) {
-        circuitsRef.current.material.uniforms.time.value = clock.getElapsedTime();
+      // Simple color pulse for circuits
+      if (circuitsRef.current) {
+        const material = circuitsRef.current.material as THREE.MeshStandardMaterial;
+        const pulse = Math.sin(clock.getElapsedTime() * pulseSpeed) * 0.5 + 0.5;
+        material.emissiveIntensity = pulse * glowIntensity;
       }
     }
   });
 
-  // Circuit pattern shader
-  const circuitShader = {
-    uniforms: {
-      time: { value: 0 },
-      color: { value: new THREE.Color(0x0A2463) },
-      glowColor: { value: new THREE.Color(0x00bfff) }
-    },
-    vertexShader: `
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform float time;
-      uniform vec3 color;
-      uniform vec3 glowColor;
-      varying vec2 vUv;
-      
-      float circuit(vec2 st, float thickness) {
-        // Create grid pattern
-        vec2 grid = fract(st * 10.0);
-        float line = step(1.0 - thickness, grid.x) + step(1.0 - thickness, grid.y);
-        
-        // Add some time-based movement to simulate data flow
-        float flow = step(0.98, sin(st.x * 10.0 + time) * 0.5 + 0.5) * step(0.9, sin(st.y * 5.0 - time * 0.5) * 0.5 + 0.5);
-        
-        return max(line, flow);
-      }
-      
-      void main() {
-        float pattern = circuit(vUv, 0.05);
-        vec3 finalColor = mix(color, glowColor, pattern);
-        float alpha = pattern * 0.7 + 0.3;
-        gl_FragColor = vec4(finalColor, alpha);
-      }
-    `
-  };
+  // Simple animation variables instead of complex shader
+  const pulseSpeed = 1.5;
+  const glowIntensity = 0.3;
 
   return (
     <group ref={groupRef} {...props} dispose={null}>
@@ -90,11 +56,14 @@ export default function AIJudge(props: any) {
       {/* Circuit Pattern */}
       <mesh ref={circuitsRef} position={[0, 1.5, 0]} scale={[1.05, 1.05, 1.05]}>
         <sphereGeometry args={[1, 32, 32]} />
-        <shaderMaterial 
-          attach="material"
-          args={[circuitShader]}
+        <meshStandardMaterial 
+          color={0x0A2463}
+          emissive={0x00bfff}
+          emissiveIntensity={0.2}
           transparent={true}
-          side={THREE.DoubleSide}
+          opacity={0.6}
+          metalness={0.8}
+          roughness={0.2}
         />
       </mesh>
       

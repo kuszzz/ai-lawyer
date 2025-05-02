@@ -1,11 +1,6 @@
 import { Link } from "wouter";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Environment, Float, useScroll } from "@react-three/drei";
 import { motion, useScroll as useFramerScroll, useTransform } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
-import Gavel from "@/components/models/Gavel";
-import ScalesOfJustice from "@/components/models/ScalesOfJustice";
-import AIJudge from "@/components/models/AIJudge";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import ChatPreview from "@/components/ChatPreview";
 import Footer from "@/components/Footer";
@@ -30,63 +25,45 @@ const TypewriterText = ({ text, delay = 40 }: { text: string, delay?: number }) 
   return <span>{displayText}<span className="animate-pulse">|</span></span>;
 };
 
-// Scene Selector Component for 3D Models
+// Fallback Component for 3D Models with motion animations
 const ModelScene = ({ activeModel }: { activeModel: string }) => {
   return (
-    <div className="absolute inset-0 z-0">
-      <Canvas shadows>
-        <Environment preset="city" />
-        <PerspectiveCamera makeDefault position={[0, 0, 8]} />
-        <ambientLight intensity={0.4} />
-        <directionalLight 
-          position={[5, 5, 5]} 
-          intensity={1}
-          color="#FFD700"
-          castShadow
-        />
-        <directionalLight 
-          position={[-5, -5, 5]} 
-          intensity={1}
-          color="#0A2463"
-        />
-        
-        {/* Show one model at a time based on active section */}
-        <Float 
-          speed={2} 
-          rotationIntensity={0.5} 
-          floatIntensity={0.5}
+    <div className="absolute inset-0 z-0 flex items-center justify-center opacity-70">
+      {activeModel === "gavel" && (
+        <motion.div 
+          className="relative w-40 h-40"
+          animate={{ rotateY: 360 }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
         >
-          {activeModel === "gavel" && (
-            <Gavel 
-              rotation={[0, Math.PI / 4, 0]} 
-              position={[0, 0, 0]}
-            />
-          )}
-          
-          {activeModel === "scales" && (
-            <ScalesOfJustice 
-              rotation={[0, Math.PI / 4, 0]}
-              position={[0, 0, 0]} 
-              scale={0.8}
-            />
-          )}
-          
-          {activeModel === "judge" && (
-            <AIJudge 
-              rotation={[0, Math.PI / 4, 0]}
-              position={[0, 0, 0]} 
-              scale={1.2}
-            />
-          )}
-        </Float>
-        
-        <OrbitControls 
-          enableZoom={false}
-          enablePan={false}
-          autoRotate
-          autoRotateSpeed={1}
-        />
-      </Canvas>
+          <div className="absolute inset-0 flex items-center justify-center text-legal-gold text-6xl">
+            <i className="ri-auction-line"></i>
+          </div>
+        </motion.div>
+      )}
+      
+      {activeModel === "scales" && (
+        <motion.div 
+          className="relative w-40 h-40"
+          animate={{ rotateY: 360 }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center text-legal-gold text-6xl">
+            <i className="ri-scales-3-line"></i>
+          </div>
+        </motion.div>
+      )}
+      
+      {activeModel === "judge" && (
+        <motion.div 
+          className="relative w-40 h-40"
+          animate={{ rotateY: 360 }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center text-legal-gold text-6xl">
+            <i className="ri-robot-line"></i>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };
@@ -134,8 +111,8 @@ const Home = () => {
         {/* Animated Background */}
         <AnimatedBackground />
         
-        {/* 3D Models (temporarily disabled for compatibility) */}
-        {/* <ModelScene activeModel={activeModel} /> */}
+        {/* 3D Models */}
+        <ModelScene activeModel={activeModel} />
         <div className="absolute inset-0 z-0 flex items-center justify-center opacity-30">
           <div className="relative w-full h-full">
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
