@@ -42,7 +42,6 @@ export function setupChatRoutes(app: any) {
         userId,
         caseId: caseId ? parseInt(caseId) : null,
         title: title || 'New Consultation',
-        createdAt: new Date(),
       });
       
       // Add welcome message
@@ -50,7 +49,6 @@ export function setupChatRoutes(app: any) {
         sessionId: session.id,
         role: 'assistant',
         content: 'Welcome to your legal consultation. How can I assist you with your case today?',
-        timestamp: new Date(),
       });
       
       res.status(201).json(session);
@@ -93,7 +91,7 @@ export function setupChatRoutes(app: any) {
         id: message.id.toString(),
         role: message.role,
         content: message.content,
-        timestamp: message.timestamp.toISOString()
+        timestamp: message.createdAt.toISOString()
       }));
       
       res.json(formattedMessages);
@@ -115,7 +113,6 @@ export function setupChatRoutes(app: any) {
           userId: 1, // Default user ID
           caseId: caseId ? parseInt(caseId) : null,
           title: 'New Consultation',
-          createdAt: new Date(),
         });
         activeSessionId = newSession.id;
       }
@@ -128,7 +125,6 @@ export function setupChatRoutes(app: any) {
         sessionId: activeSessionId,
         role: 'assistant',
         content: aiResponse,
-        timestamp: new Date(),
       });
       
       // Format the response
@@ -136,7 +132,7 @@ export function setupChatRoutes(app: any) {
         id: message.id.toString(),
         role: message.role,
         content: message.content,
-        timestamp: message.timestamp.toISOString()
+        timestamp: message.createdAt.toISOString()
       };
       
       res.json(formattedMessage);

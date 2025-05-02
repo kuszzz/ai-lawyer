@@ -104,11 +104,10 @@ export function setupLegalRoutes(app: any) {
       // Create document in storage
       const document = await storage.createDocument({
         caseId: newCase.id,
-        name: req.file.originalname,
+        filename: req.file.originalname,
         fileType: req.file.mimetype,
         filePath: filePath,
-        size: req.file.size,
-        uploadedAt: new Date(),
+        fileSize: req.file.size,
         pageCount: 1, // This would be determined by PDF processing
       });
       
@@ -119,11 +118,12 @@ export function setupLegalRoutes(app: any) {
       const analysis = await storage.createAnalysis({
         caseId: newCase.id,
         summary: analysisResult.metadata.title,
-        prediction: JSON.stringify(analysisResult.prediction),
-        precedents: JSON.stringify(analysisResult.similar_cases),
-        strengths: JSON.stringify(analysisResult.analysis.strengths),
-        weaknesses: JSON.stringify(analysisResult.analysis.weaknesses),
-        createdAt: new Date(),
+        prediction: analysisResult.prediction,
+        precedents: analysisResult.similar_cases,
+        argumentAnalysis: {
+          strengths: analysisResult.analysis.strengths,
+          weaknesses: analysisResult.analysis.weaknesses
+        }
       });
       
       res.status(201).json({
@@ -158,21 +158,18 @@ export function setupLegalRoutes(app: any) {
       const response = {
         id: analysis.id,
         caseTitle: caseInfo?.title || 'Unknown Case',
-        caseType: caseInfo?.type || 'Unknown Type',
+        caseType: caseInfo?.caseType || 'Unknown Type',
         summary: analysis.summary,
         documents: documents.map(doc => ({
-          name: doc.name,
-          size: doc.size,
-          pageCount: doc.pageCount,
-          description: doc.name,
-          tags: getDocumentTags(doc.name)
+          name: doc.filename, // Using client-side property names for UI compatibility
+          size: doc.fileSize,
+          pageCount: doc.pageCount || 0,
+          description: doc.filename,
+          tags: getDocumentTags(doc.filename)
         })),
-        prediction: JSON.parse(analysis.prediction),
-        precedents: JSON.parse(analysis.precedents),
-        argumentAnalysis: {
-          strengths: JSON.parse(analysis.strengths),
-          weaknesses: JSON.parse(analysis.weaknesses)
-        },
+        prediction: analysis.prediction,
+        precedents: analysis.precedents,
+        argumentAnalysis: analysis.argumentAnalysis,
         createdAt: analysis.createdAt.toISOString()
       };
       
