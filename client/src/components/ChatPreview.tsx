@@ -9,16 +9,16 @@ const ChatPreview = () => {
     <div className="fixed bottom-6 right-6 z-40">
       {/* Chat Button */}
       <motion.button
-        className="w-14 h-14 rounded-full bg-legal-gold text-legal-dark flex items-center justify-center shadow-lg"
+        className="w-14 h-14 rounded-full bg-legal-gold text-legal-dark dark:text-legal-dark flex items-center justify-center shadow-lg"
         onClick={() => setIsOpen(!isOpen)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         animate={isOpen ? { rotate: 90 } : { rotate: 0 }}
       >
         {isOpen ? (
-          <i className="ri-close-line text-2xl"></i>
+          <i className="ri-close-line text-2xl dark:text-legal-dark"></i>
         ) : (
-          <i className="ri-chat-3-line text-2xl"></i>
+          <i className="ri-chat-3-line text-2xl dark:text-legal-dark"></i>
         )}
       </motion.button>
       
@@ -26,7 +26,7 @@ const ChatPreview = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="absolute bottom-16 right-0 w-80 bg-legal-dark-alt rounded-lg shadow-xl overflow-hidden"
+            className="absolute bottom-16 right-0 w-80 bg-legal-dark-alt dark:bg-legal-dark rounded-lg shadow-xl overflow-hidden"
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 10 }}
@@ -49,28 +49,28 @@ const ChatPreview = () => {
             </div>
             
             {/* Chat Messages Preview */}
-            <div className="p-4 bg-legal-dark-alt">
+            <div className="p-4 bg-legal-dark-alt dark:bg-legal-dark">
               <div className="chat-bubble assistant text-sm mb-3">
                 <p>Hello! I'm the Delhi High Court's AI-powered Virtual Judge. How can I assist you today?</p>
               </div>
               
               <div className="space-y-2">
                 <motion.div 
-                  className="bg-legal-dark p-2 rounded-lg cursor-pointer text-sm hover:bg-legal-blue/20 transition-colors"
+                  className="bg-legal-dark dark:bg-legal-dark-alt p-2 rounded-lg cursor-pointer text-sm hover:bg-legal-blue/20 transition-colors"
                   whileHover={{ y: -2 }}
                 >
                   <p>How will my case be evaluated?</p>
                 </motion.div>
                 
                 <motion.div 
-                  className="bg-legal-dark p-2 rounded-lg cursor-pointer text-sm hover:bg-legal-blue/20 transition-colors"
+                  className="bg-legal-dark dark:bg-legal-dark-alt p-2 rounded-lg cursor-pointer text-sm hover:bg-legal-blue/20 transition-colors"
                   whileHover={{ y: -2 }}
                 >
                   <p>What documentation do I need to submit?</p>
                 </motion.div>
                 
                 <motion.div 
-                  className="bg-legal-dark p-2 rounded-lg cursor-pointer text-sm hover:bg-legal-blue/20 transition-colors"
+                  className="bg-legal-dark dark:bg-legal-dark-alt p-2 rounded-lg cursor-pointer text-sm hover:bg-legal-blue/20 transition-colors"
                   whileHover={{ y: -2 }}
                 >
                   <p>Tell me more about legal precedents</p>
@@ -79,7 +79,7 @@ const ChatPreview = () => {
             </div>
             
             {/* Footer with CTA */}
-            <div className="p-3 bg-legal-dark border-t border-legal-blue/20">
+            <div className="p-3 bg-legal-dark dark:bg-legal-dark-alt border-t border-legal-blue/20">
               <Link href="/judge">
                 <motion.div 
                   className="w-full py-2 bg-legal-gold text-legal-dark text-center rounded-md cursor-pointer font-medium"

@@ -103,7 +103,7 @@ const ChatInterface = ({ caseInfo }: ChatInterfaceProps) => {
   };
   
   return (
-    <div className="md:col-span-3 bg-legal-dark rounded-xl border border-legal-blue/20 shadow-blue flex flex-col h-[700px]">
+    <div className="bg-legal-dark rounded-xl border border-legal-blue/20 shadow-blue flex flex-col h-[700px]">
       {/* Chat header */}
       <div className="p-4 border-b border-legal-blue/20 flex items-center">
         <div className="w-10 h-10 rounded-full bg-legal-gold/20 flex items-center justify-center mr-3">
