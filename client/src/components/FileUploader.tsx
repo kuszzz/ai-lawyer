@@ -103,15 +103,15 @@ const FileUploader = () => {
       // Create a FormData object to handle file uploads
       const formData = new FormData();
       
-      // Append each file
-      files.forEach((file) => {
-        formData.append("files", file.file);
-      });
+      // Append each file - our endpoint uses 'document' as the field name
+      if (files.length > 0) {
+        formData.append("document", files[0].file);
+      }
       
-      // Append case information
-      formData.append("caseTitle", caseTitle);
-      formData.append("caseType", caseType);
-      formData.append("caseDescription", caseDescription);
+      // Append case information - match the fields expected by the backend
+      formData.append("title", caseTitle);
+      formData.append("type", caseType);
+      formData.append("description", caseDescription);
       
       // Append analysis options
       formData.append("analysisOptions", JSON.stringify(analysisOptions));
@@ -119,7 +119,7 @@ const FileUploader = () => {
       formData.append("jurisdiction", jurisdiction);
 
       // Send the data to the server
-      const response = await fetch("/api/upload", {
+      const response = await fetch("/api/documents/analyze", {
         method: "POST",
         body: formData,
         credentials: "include",

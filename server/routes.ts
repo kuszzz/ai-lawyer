@@ -34,6 +34,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // API routes
   
+  // Case routes
+  app.get("/api/cases/recent", async (req, res) => {
+    try {
+      const recentCase = await storage.getMostRecentCase();
+      
+      if (!recentCase) {
+        return res.status(404).json({ message: "No cases found" });
+      }
+      
+      res.json({
+        id: recentCase.id,
+        title: recentCase.title,
+        description: recentCase.description,
+        caseType: recentCase.caseType,
+        createdAt: recentCase.createdAt
+      });
+    } catch (error) {
+      console.error("Error fetching recent case:", error);
+      res.status(500).json({ message: "Error fetching recent case" });
+    }
+  });
+  
   // User routes
   app.post("/api/login", async (req, res) => {
     const { username, password } = req.body;
