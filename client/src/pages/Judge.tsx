@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import ChatInterface from "@/components/ChatInterface";
+import ChatInterface from "@/components/ChatInterfaceNew";
 import { CaseInfo, ChatSession } from "@/lib/types";
 
 const Judge = () => {
