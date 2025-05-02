@@ -97,9 +97,8 @@ export function setupLegalRoutes(app: any) {
       const newCase = await storage.createCase({
         title: caseData.title || 'Untitled Case',
         description: caseData.description || '',
-        type: caseData.type || 'General',
+        caseType: caseData.type || 'General',
         userId: caseData.userId ? parseInt(caseData.userId) : 1, // Default user ID if not provided
-        createdAt: new Date(),
       });
       
       // Create document in storage
