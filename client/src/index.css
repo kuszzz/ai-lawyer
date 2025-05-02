@@ -54,6 +54,7 @@
 
 /* Legal-themed colors */
 :root {
+  /* Dark theme (default) */
   --legal-dark: #121823;
   --legal-dark-alt: #1A2234;
   --legal-blue: #0A2463;
@@ -62,6 +63,18 @@
   --legal-gold-dark: #D4AF37;
   --legal-text: #E2E8F0;
   --legal-text-secondary: #94A3B8;
+}
+
+/* Light theme overrides */
+.light {
+  --legal-dark: #F5F7FA;
+  --legal-dark-alt: #E2E8F0;
+  --legal-blue: #3E92CC;
+  --legal-blue-light: #0A2463;
+  --legal-gold: #D4AF37;
+  --legal-gold-dark: #BD9A2A;
+  --legal-text: #1A2234;
+  --legal-text-secondary: #4A5568;
 }
 
 .bg-legal-dark { background-color: var(--legal-dark); }
@@ -201,6 +214,15 @@
   margin-right: auto;
   border-bottom-left-radius: 0;
   border-left: 2px solid var(--legal-gold);
+}
+
+/* Theme-specific styles */
+.dark .shadow-special {
+  box-shadow: 0 5px 20px rgba(62, 146, 204, 0.3);
+}
+
+.light .shadow-special {
+  box-shadow: 0 5px 20px rgba(10, 36, 99, 0.2);
 }
 
 .chat-input {
