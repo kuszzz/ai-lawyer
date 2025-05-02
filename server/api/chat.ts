@@ -72,7 +72,7 @@ export function setupChatRoutes(app: any) {
           const caseData = await storage.getCase(caseId);
           if (caseData) {
             // Set context for the virtual judge to provide more relevant responses
-            virtualJudge.setCaseContext(`Case: ${caseData.title}, Type: ${caseData.type}`);
+            virtualJudge.setCaseContext(`Case: ${caseData.title}, Type: ${caseData.caseType}`);
           }
         } catch (err) {
           console.error('Error setting case context for virtual judge:', err);
@@ -103,8 +103,7 @@ export function setupChatRoutes(app: any) {
       const userMessage = await storage.createChatMessage({
         sessionId,
         content: message,
-        sender: 'user',
-        timestamp: new Date()
+        role: 'user'
       });
       
       // Get response from the virtual judge
@@ -114,8 +113,7 @@ export function setupChatRoutes(app: any) {
       const judgeMessage = await storage.createChatMessage({
         sessionId,
         content: aiResponse,
-        sender: 'judge',
-        timestamp: new Date()
+        role: 'assistant'
       });
       
       // Return both messages
@@ -143,7 +141,7 @@ export function setupChatRoutes(app: any) {
         try {
           const caseData = await storage.getCase(parseInt(caseId));
           if (caseData) {
-            virtualJudge.setCaseContext(`Case: ${caseData.title}, Type: ${caseData.type}`);
+            virtualJudge.setCaseContext(`Case: ${caseData.title}, Type: ${caseData.caseType}`);
           }
         } catch (err) {
           console.error('Error setting case context for virtual judge:', err);

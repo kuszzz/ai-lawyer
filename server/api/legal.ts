@@ -1,171 +1,155 @@
 import { Request, Response } from 'express';
-import fs from 'fs';
-import path from 'path';
-import { exec } from 'child_process';
-import multer from 'multer';
 import { storage } from '../storage';
-import { InsertCase, InsertDocument, InsertAnalysis } from '../../shared/schema';
+import path from 'path';
+import fs from 'fs';
+import multer from 'multer';
+import { extractTextFromPdf, extractMetadata, generateDocumentId } from '../utils/pdfProcessor';
+import { generateFullAnalysis, findSimilarCases, predictJudgment } from '../utils/legalAnalyzer';
+import { virtualJudge } from '../utils/virtualJudge';
 
 // Configure multer for file uploads
 const upload = multer({
   storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      const dir = path.join(process.cwd(), 'uploads');
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+    destination: function (req, file, cb) {
+      const uploadDir = path.join(process.cwd(), 'uploads');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
       }
-      cb(null, dir);
+      cb(null, uploadDir);
     },
-    filename: (req, file, cb) => {
-      cb(null, `${Date.now()}-${file.originalname}`);
+    filename: function (req, file, cb) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     },
   }),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit
+  limits: {
+    fileSize: 25 * 1024 * 1024, // 25MB
+  },
 });
 
-// This function would integrate with the actual backend model
-// For now, it returns mock data in the same format as the Delhi High Court models
 async function analyzeLegalDocument(filePath: string) {
-  // In a real implementation, we would execute the Python code here
-  // using child_process.exec or python-shell
-  
-  // Mock response format based on Delhi High Court model output
-  return {
-    metadata: {
-      title: "Sample vs The State",
-      case_number: "CRL.A. 123/2023",
-      date: new Date().toISOString(),
-      court: "Delhi High Court",
-      judges: ["Justice A. K. Smith"],
-      petitioner: "Appellant",
-      respondent: "State",
-      type: "Criminal Appeal"
-    },
-    similar_cases: [
-      {
-        title: "State vs John Doe",
-        citation: "(2022) DLT 123",
-        similarity: 0.85,
-        summary: "This case involved similar legal principles regarding criminal procedure.",
-        year: 2022
-      },
-      {
-        title: "Jane Doe vs State",
-        citation: "(2021) DLT 456",
-        similarity: 0.75,
-        summary: "This case set precedent for similar factual scenarios.",
-        year: 2021
-      }
-    ],
-    prediction: {
-      outcome: "Appeal Allowed",
-      confidence: 0.78,
-      reasoning: "Based on precedent and the facts presented, the court is likely to allow the appeal considering the evidence inconsistencies.",
-      plaintiff_probability: 0.78,
-      defendant_probability: 0.22
-    },
-    legal_principles: [
-      "Burden of proof in criminal cases",
-      "Evidentiary standards for criminal appeals",
-      "Due process considerations"
-    ],
-    analysis: {
-      strengths: [
-        "Strong precedent supporting the appellant's position",
-        "Inconsistencies in witness testimony"
-      ],
-      weaknesses: [
-        "Limited documentary evidence",
-        "Procedural delays may affect credibility"
-      ]
+  try {
+    // Extract text from PDF
+    const text = await extractTextFromPdf(filePath);
+    
+    // Generate full analysis
+    const analysis = generateFullAnalysis(text);
+    
+    // Get AI summary if available
+    try {
+      const aiSummary = await virtualJudge.analyzeCaseSummary(text);
+      analysis.ai_summary = aiSummary;
+    } catch (error) {
+      console.error('Error getting AI summary:', error);
+      // Continue without AI summary
+      analysis.ai_summary = null;
     }
-  };
+    
+    return {
+      text,
+      analysis
+    };
+  } catch (error) {
+    console.error('Error analyzing document:', error);
+    throw error;
+  }
 }
 
 export function setupLegalRoutes(app: any) {
-  // Route to upload and analyze a legal document
+  // Handle document uploads and analysis
   app.post('/api/documents/analyze', upload.single('document'), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
       }
-
+      
+      // Get file details
       const filePath = req.file.path;
-      const caseData = req.body;
-      
-      // Create case in storage
-      const newCase = await storage.createCase({
-        title: caseData.title || 'Untitled Case',
-        description: caseData.description || '',
-        caseType: caseData.type || 'General',
-        userId: caseData.userId ? parseInt(caseData.userId) : 1, // Default user ID if not provided
-      });
-      
-      // Create document in storage
-      const document = await storage.createDocument({
-        caseId: newCase.id,
-        filename: req.file.originalname,
-        fileType: req.file.mimetype,
-        filePath: filePath,
-        fileSize: req.file.size,
-        pageCount: 1, // This would be determined by PDF processing
-      });
+      const originalName = req.file.originalname;
+      const fileSize = req.file.size;
+      const fileType = req.file.mimetype;
       
       // Analyze the document
-      const analysisResult = await analyzeLegalDocument(filePath);
+      const { text, analysis } = await analyzeLegalDocument(filePath);
       
-      // Store analysis results
-      const analysis = await storage.createAnalysis({
-        caseId: newCase.id,
-        summary: analysisResult.metadata.title,
-        prediction: analysisResult.prediction,
-        precedents: analysisResult.similar_cases,
-        argumentAnalysis: {
-          strengths: analysisResult.analysis.strengths,
-          weaknesses: analysisResult.analysis.weaknesses
-        }
+      // Create a case
+      const newCase = await storage.createCase({
+        title: analysis.metadata.title || originalName,
+        caseType: analysis.metadata.type || 'General Case',
+        description: `Uploaded on ${new Date().toLocaleDateString()}`,
+        userId: 1 // Default user ID
       });
       
-      res.status(201).json({
+      // Save document to the database
+      const document = await storage.createDocument({
+        caseId: newCase.id,
+        filename: originalName,
+        fileSize: fileSize,
+        fileType: fileType,
+        filePath: filePath,
+        pageCount: 1 // Default, would be extracted from PDF in a full implementation
+      });
+      
+      // Save analysis to the database
+      const savedAnalysis = await storage.createAnalysis({
+        caseId: newCase.id,
+        summary: analysis.ai_summary || 'Document analysis complete',
+        prediction: analysis.prediction,
+        precedents: analysis.similar_cases,
+        argumentAnalysis: analysis.analysis
+      });
+      
+      // Return the analysis results
+      res.json({
         caseId: newCase.id,
         documentId: document.id,
-        analysisId: analysis.id,
-        metadata: analysisResult.metadata,
-        similar_cases: analysisResult.similar_cases,
-        prediction: analysisResult.prediction,
-        analysis: analysisResult.analysis
+        metadata: analysis.metadata,
+        prediction: analysis.prediction,
+        similarCases: analysis.similar_cases,
+        legalPrinciples: analysis.legal_principles,
+        argumentAnalysis: analysis.analysis,
+        summary: analysis.ai_summary
       });
     } catch (error) {
       console.error('Error analyzing document:', error);
       res.status(500).json({ error: 'Error analyzing document' });
     }
   });
-
-  // Route to get case analysis
+  
+  // Get case analysis
   app.get('/api/case-analysis/:caseId', async (req: Request, res: Response) => {
     try {
       const caseId = parseInt(req.params.caseId);
-      const analysis = await storage.getAnalysisByCaseId(caseId);
+      if (isNaN(caseId)) {
+        return res.status(400).json({ error: 'Invalid case ID' });
+      }
       
+      // Get the case
+      const caseData = await storage.getCase(caseId);
+      if (!caseData) {
+        return res.status(404).json({ error: 'Case not found' });
+      }
+      
+      // Get the analysis
+      const analysis = await storage.getAnalysisByCaseId(caseId);
       if (!analysis) {
         return res.status(404).json({ error: 'Analysis not found' });
       }
       
-      const caseInfo = await storage.getCase(caseId);
+      // Get the documents for this case
       const documents = await storage.getDocumentsByCaseId(caseId);
       
       // Format the response
       const response = {
-        id: analysis.id,
-        caseTitle: caseInfo?.title || 'Unknown Case',
-        caseType: caseInfo?.caseType || 'Unknown Type',
-        summary: analysis.summary,
+        caseId: caseData.id,
+        title: caseData.title,
+        caseType: caseData.caseType,
+        description: caseData.description,
         documents: documents.map(doc => ({
-          name: doc.filename, // Using client-side property names for UI compatibility
-          size: doc.fileSize,
-          pageCount: doc.pageCount || 0,
-          description: doc.filename,
-          tags: getDocumentTags(doc.filename)
+          id: doc.id,
+          filename: doc.filename,
+          fileType: doc.fileType,
+          fileSize: doc.fileSize
         })),
         prediction: analysis.prediction,
         precedents: analysis.precedents,
@@ -181,14 +165,19 @@ export function setupLegalRoutes(app: any) {
       res.status(500).json({ error: 'Error retrieving case analysis' });
     }
   });
-
+  
   // Route to get similar cases for a document
   app.get('/api/documents/:documentId/similar-cases', async (req: Request, res: Response) => {
     try {
-      // In a real implementation, we would query the similar cases from storage
-      // or re-run the analysis on the document
+      const documentId = parseInt(req.params.documentId);
+      if (isNaN(documentId)) {
+        return res.status(400).json({ error: 'Invalid document ID' });
+      }
       
-      // Mock response for now
+      // In a real app, we would find the document and get its case ID
+      // Then get the analysis for that case and return the similar cases
+      // For now, return a simplified response with hardcoded similar cases
+      
       res.json([
         {
           title: "State vs John Doe",
@@ -217,24 +206,4 @@ export function setupLegalRoutes(app: any) {
       res.status(500).json({ error: 'Error retrieving similar cases' });
     }
   });
-}
-
-// Utility function to generate document tags
-function getDocumentTags(filename: string): string[] {
-  const tags = [];
-  
-  // Extract file extension
-  const ext = path.extname(filename).toLowerCase();
-  if (ext === '.pdf') tags.push('PDF');
-  else if (ext === '.docx' || ext === '.doc') tags.push('Word Document');
-  else if (ext === '.txt') tags.push('Text File');
-  
-  // Add mock tags based on filename patterns
-  if (filename.toLowerCase().includes('petition')) tags.push('Petition');
-  if (filename.toLowerCase().includes('appeal')) tags.push('Appeal');
-  if (filename.toLowerCase().includes('evidence')) tags.push('Evidence');
-  if (filename.toLowerCase().includes('exhibit')) tags.push('Exhibit');
-  if (filename.toLowerCase().includes('testimony')) tags.push('Testimony');
-  
-  return tags;
 }
