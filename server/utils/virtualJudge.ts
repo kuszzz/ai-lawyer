@@ -1,9 +1,10 @@
 import fetch from 'node-fetch';
 
-// Ollama API endpoint (default for local installation)
-const OLLAMA_API_ENDPOINT = process.env.OLLAMA_API_ENDPOINT || 'http://localhost:11434/api';
+// Together.ai API endpoint
+const TOGETHER_API_ENDPOINT = 'https://api.together.xyz/v1/chat/completions';
+const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY;
 // Default model to use
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama2';
+const TOGETHER_MODEL = process.env.TOGETHER_MODEL || 'mistralai/Mixtral-8x7B-Instruct-v0.1';
 
 /**
  * Virtual Judge AI that can analyze legal questions and provide conversational responses
@@ -13,7 +14,7 @@ export class VirtualJudge {
   private model: string;
   private caseContext: string | null = null;
   
-  constructor(model: string = OLLAMA_MODEL) {
+  constructor(model: string = TOGETHER_MODEL) {
     this.model = model;
   }
   
@@ -26,50 +27,63 @@ export class VirtualJudge {
   }
   
   /**
-   * Generate a response to a legal question using Ollama
+   * Generate a response to a legal question using Together.ai
    * @param message User's message/question
    * @returns AI response
    */
   async getResponse(message: string): Promise<string> {
     try {
-      // Prepare prompt with context if available
-      let prompt = message;
-      
-      if (this.caseContext) {
-        prompt = `[Case Context]\n${this.caseContext}\n\n[Question]\n${message}\n\n[Answer as a judge]`;
-      } else {
-        prompt = `[Question]\n${message}\n\n[Answer as a legal expert]`;
+      // Check if API key is available
+      if (!TOGETHER_API_KEY) {
+        console.error('Together API key not available');
+        return this.getFallbackResponse(message);
       }
       
-      // Add system prompt for law expertise
+      // Prepare messages with context if available
+      let userMessage = message;
+      
+      if (this.caseContext) {
+        userMessage = `[Case Context]\n${this.caseContext}\n\n[Question]\n${message}\n\n[Please answer as a judge]`;
+      }
+      
+      // System prompt for law expertise
       const systemPrompt = "You are a virtual judge from the Delhi High Court with expertise in Indian law. Provide clear, professional legal analysis and guidance. Base your answers on legal principles, precedents, and statutes. Always maintain judicial dignity and impartiality.";
       
-      // Try to connect to Ollama API
-      const response = await fetch(`${OLLAMA_API_ENDPOINT}/generate`, {
+      // Try to connect to Together API
+      const response = await fetch(TOGETHER_API_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${TOGETHER_API_KEY}`
         },
         body: JSON.stringify({
           model: this.model,
-          prompt: prompt,
-          system: systemPrompt,
-          stream: false
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
         }),
       });
       
       if (!response.ok) {
-        // Fallback to rule-based response if Ollama isn't available
-        console.error(`Ollama API error: ${response.status} ${response.statusText}`);
+        // Fallback to rule-based response if API isn't available
+        console.error(`Together API error: ${response.status} ${response.statusText}`);
         return this.getFallbackResponse(message);
       }
       
       const data = await response.json() as any;
-      return data.response || this.getFallbackResponse(message);
+      if (data.choices && data.choices.length > 0 && data.choices[0].message) {
+        return data.choices[0].message.content;
+      } else {
+        console.error('Unexpected Together API response format:', data);
+        return this.getFallbackResponse(message);
+      }
       
     } catch (error) {
-      console.error('Error connecting to Ollama:', error);
-      // Fallback to rule-based response if Ollama isn't available
+      console.error('Error connecting to Together API:', error);
+      // Fallback to rule-based response if API isn't available
       return this.getFallbackResponse(message);
     }
   }
@@ -107,39 +121,54 @@ export class VirtualJudge {
   }
   
   /**
-   * Generate a case analysis summary using AI
+   * Generate a case analysis summary using Together.ai
    * @param caseText Full text of the case
    * @returns Analysis summary
    */
   async analyzeCaseSummary(caseText: string): Promise<string> {
     try {
-      const prompt = `Please analyze the following legal case and provide a concise summary highlighting the key issues, legal principles involved, and potential outcomes:\n\n${caseText.substring(0, 4000)}...`;
+      // Check if API key is available
+      if (!TOGETHER_API_KEY) {
+        console.error('Together API key not available');
+        return "The case appears to involve multiple legal questions that require careful analysis. Based on legal principles and precedents, the court will evaluate the merits while considering procedural compliance and substantive law.";
+      }
+      
+      const userPrompt = `Please analyze the following legal case and provide a concise summary highlighting the key issues, legal principles involved, and potential outcomes:\n\n${caseText.substring(0, 4000)}...`;
       
       const systemPrompt = "You are a judicial expert tasked with creating clear, professional legal summaries. Focus on identifying key legal issues, relevant statutes and precedents, and providing objective analysis.";
       
-      const response = await fetch(`${OLLAMA_API_ENDPOINT}/generate`, {
+      const response = await fetch(TOGETHER_API_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${TOGETHER_API_KEY}`
         },
         body: JSON.stringify({
           model: this.model,
-          prompt: prompt,
-          system: systemPrompt,
-          stream: false
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          temperature: 0.5,
+          max_tokens: 1500
         }),
       });
       
       if (!response.ok) {
-        console.error(`Ollama API error: ${response.status} ${response.statusText}`);
+        console.error(`Together API error: ${response.status} ${response.statusText}`);
         return "The case appears to involve multiple legal questions that require careful analysis. Based on legal principles and precedents, the court will evaluate the merits while considering procedural compliance and substantive law.";
       }
       
       const data = await response.json() as any;
-      return data.response || "The case requires thorough examination of facts and applicable legal provisions. The court's decision will depend on the strength of arguments presented by both parties and relevant precedents.";
+      if (data.choices && data.choices.length > 0 && data.choices[0].message) {
+        return data.choices[0].message.content;
+      } else {
+        console.error('Unexpected Together API response format:', data);
+        return "The case requires thorough examination of facts and applicable legal provisions. The court's decision will depend on the strength of arguments presented by both parties and relevant precedents.";
+      }
       
     } catch (error) {
-      console.error('Error analyzing case with Ollama:', error);
+      console.error('Error analyzing case with Together API:', error);
       return "This case raises important legal questions that must be evaluated within the framework of existing statutes and judicial precedents. The outcome will likely depend on specific factual circumstances and the application of established legal principles.";
     }
   }
