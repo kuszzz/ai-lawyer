@@ -14,6 +14,14 @@ const Analysis = () => {
   // Get the most recent case analysis (or the one from localStorage)
   const { data: analysis, isLoading, error } = useQuery<CaseAnalysis>({
     queryKey: ["/api/case-analysis", currentCaseId],
+    queryFn: async () => {
+      if (!currentCaseId) throw new Error("No case ID provided");
+      const response = await fetch(`/api/case-analysis/${currentCaseId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch case analysis: ${response.status}`);
+      }
+      return response.json();
+    },
     enabled: !!currentCaseId,
   });
   
